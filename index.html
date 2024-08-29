@@ -1,352 +1,401 @@
 <!DOCTYPE html>
 <html lang="en">
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>PassCrack</title>
-      <style>
-        body {
-          font-family: "Roboto", sans-serif;
-          background: linear-gradient(135deg, #1f1c2c, #827aad);
-          margin: 0;
-          padding: 0;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          min-height: 100vh;
-          color: #fff;
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PassCrack</title>
+  <style>
+    body {
+      font-family: "Roboto", sans-serif;
+      background: linear-gradient(135deg, #1f1c2c, #827aad);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #fff;
+    }
+
+    header {
+      position: absolute;
+      top: 0;
+      background-color: #282828;
+      width: 100%;
+      padding: 25px 0;
+      text-align: center;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+      letter-spacing: 1.5px;
+    }
+
+    .container {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+
+    input[type="password"] {
+      width: 95%;
+      padding: 12px;
+      margin-bottom: 15px;
+      margin-right: 15px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      color: #333;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      color: #fff;
+      background: linear-gradient(135deg, #ff416c, #ff4b2b);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+      box-shadow: 0 4px 10px rgba(255, 75, 43, 0.3);
+      margin-top: 25px;
+    }
+
+    button:hover {
+      background: linear-gradient(135deg, #ff4b2b, #ff416c);
+      transform: translateY(-3px);
+    }
+
+    button:disabled {
+      background: #555;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    #currentAttempt {
+      font-size: 28px;
+      font-weight: bold;
+      margin: 25px 0;
+      transition: color 0.5s, background-color 0.5s;
+    }
+
+    #settings {
+      margin-bottom: 15px;
+    }
+
+    .flashing-green {
+      animation: flashgreen 1s infinite alternate;
+    }
+
+    @keyframes flashgreen {
+      from {
+        background-color: #00ff00;
+      }
+
+      to {
+        background-color: rgba(0, 0, 0, 0);
+      }
+    }
+
+    .flashing-red {
+      animation: flashred 1s infinite alternate;
+    }
+
+    @keyframes flashred {
+      from {
+        background-color: #ff0000;
+      }
+
+      to {
+        background-color: rgba(0, 0, 0, 0);
+      }
+    }
+
+    .slot-machine {
+      animation: slotMachine 0.05s infinite;
+    }
+
+    @keyframes slotMachine {
+      0% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(10px);
+      }
+
+      100% {
+        transform: translateY(0);
+      }
+    }
+
+    footer {
+      position: absolute;
+      bottom: 0;
+      color: #aaa;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>PassCrack</h1>
+  </header>
+
+  <div class="container">
+    <div id="settings">
+      <input type="checkbox" id="slowMode" name="slowMode" value="slowMode">
+      <label for="slowMode">Slow Mode</label><br>
+      <input type="checkbox" id="specialChars" name="specialChars" value="specialChars" checked>
+      <label for="specialChars">Special Chars</label><br>
+      <input type="checkbox" id="numbers" name="numbers" value="numbers" checked>
+      <label for="numbers">Numbers</label>
+      <input type="checkbox" id="bothCase" name="bothCase" value="bothCase" checked>
+      <Label for="bothCase">Both Cases</Label>
+    </div>
+    <input type="password" id="password" name="password" placeholder="Enter your password" />
+    <div id="crackingTimeDiv">
+      <p id="crackingTime">Estimated time to crack: N/A</p>
+      <p id="possibleCombinations">Possible combinations: N/A</p>
+    </div>
+    <div id="currentAttemptDiv">
+      <p id="currentAttempt">_ _ _ _</p>
+    </div>
+    <p id="passwordScore">Password Score: N/A</p>
+  </div>
+
+  <div class="crack-container">
+    <button id="crack" disabled>Crack</button>
+  </div>
+
+  <footer>
+    <p>UNH Cybersecurity Club 2024</p>
+  </footer>
+
+  <script>
+    const guessesPerSecond = 400000; // depends on the device
+
+    function calculateCrackingTime(password, charSetSize) {
+      const passwordLength = password.length;
+      if (passwordLength === 0) return "N/A";
+
+      const totalCombinations = Math.pow(charSetSize, passwordLength);
+      const timeInSeconds = totalCombinations / guessesPerSecond;
+
+      const timeInMinutes = timeInSeconds / 60;
+      const timeInHours = timeInMinutes / 60;
+      const timeInDays = timeInHours / 24;
+      const timeInYears = timeInDays / 365;
+
+      if (timeInYears > 1) return `${timeInYears.toFixed(2)} years`;
+      else if (timeInDays > 1) return `${timeInDays.toFixed(2)} days`;
+      else if (timeInHours > 1) return `${timeInHours.toFixed(2)} hours`;
+      else if (timeInMinutes > 1)
+        return `${timeInMinutes.toFixed(2)} minutes`;
+      else return `${timeInSeconds.toFixed(2)} seconds`;
+    }
+
+    function calculatePasswordScore(password) {
+      // Define character set sizes
+      const LOWERCASE_SIZE = 26;
+      const UPPERCASE_SIZE = 26;
+      const DIGIT_SIZE = 10;
+      const SPECIAL_CHAR_SIZE = 32;
+
+      // Calculate character set size based on the password
+      const calculateCharSetSize = (password) => {
+        let size = 0;
+        if (/[a-z]/.test(password)) size += LOWERCASE_SIZE;
+        if (/[A-Z]/.test(password)) size += UPPERCASE_SIZE;
+        if (/[0-9]/.test(password)) size += DIGIT_SIZE;
+        if (/[^a-zA-Z0-9]/.test(password)) size += SPECIAL_CHAR_SIZE;
+        return size;
+      };
+
+      // Check if the password is dictionary-like
+      const isDictionaryLike = (password) => {
+        const commonPatterns = ["password", "123456", "qwerty", "letmein"]; // Add more patterns as needed
+        return commonPatterns.some((pattern) =>
+          password.toLowerCase().includes(pattern)
+        );
+      };
+
+      const L = password.length;
+      const S = calculateCharSetSize(password);
+
+      if (L === 0 || S === 0) return 0;
+      let multiplier = 1;
+      if (/[^a-zA-Z0-9]/.test(password)) multiplier *= 1.5;
+      if (!isDictionaryLike(password)) multiplier *= 2;
+      const combinations = Math.pow(S, L) * multiplier;
+
+      // Reward length significantly by applying an additional factor
+      const lengthFactor = Math.pow(L, 2); // Exponential scaling for length
+      const totalScore = combinations * lengthFactor;
+
+      // Return the logarithmic score or the raw number
+      return Math.log10(totalScore);
+    }
+
+    function updateCrackingTimes() {
+      console.log("Working?");
+      const password = document.getElementById("password").value;
+      let characters = "abcdefghijklmnopqrstuvwxyz";
+      if (document.getElementById("numbers").checked) {
+        characters += '1234567890';
+      }
+      if (document.getElementById("bothCase").checked) {
+        characters += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      }
+      if (document.getElementById("specialChars").checks) {
+        characters += '!@#$%^&*()_+.-';
+      }
+      const charSetSize = characters.length;
+
+      if (password.length > 0) {
+        document.getElementById("crack").removeAttribute("disabled");
+      } else {
+        document
+          .getElementById("crack")
+          .setAttribute("disabled", "disabled");
+      }
+
+      const passwordTime = calculateCrackingTime(password);
+      document.getElementById(
+        "crackingTime"
+      ).innerText = `Estimated time to crack: ${passwordTime}`;
+
+      const possibleCombinations = Math.pow(charSetSize, password.length);
+      document.getElementById(
+        "possibleCombinations"
+      ).innerText = `Possible combinations: ${possibleCombinations}`;
+
+      const passwordScore = calculatePasswordScore(password);
+      // password score but only to the nearest .001
+      document.getElementById(
+        "passwordScore"
+      ).innerText = `Password Score: ${passwordScore.toFixed(3)}`;
+
+      // remove set current attempt to ____
+      document.getElementById("currentAttempt").innerText = "_ _ _ _";
+      document
+        .getElementById("currentAttempt")
+        .classList.remove("flashing-green");
+      document
+        .getElementById("currentAttempt")
+        .classList.remove("flashing-red");
+      document
+        .getElementById("currentAttempt")
+        .classList.remove("slot-machine");
+    }
+
+    document.getElementById("crack").addEventListener("click", function () {
+      document.getElementById("currentAttempt").innerText = "_ _ _ _";
+      document
+        .getElementById("currentAttempt")
+        .classList.remove("flashing-green");
+      document
+        .getElementById("currentAttempt")
+        .classList.remove("flashing-red");
+      document
+        .getElementById("currentAttempt")
+        .classList.remove("slot-machine");
+      console.log(
+        "Cracking password " + document.getElementById("password").value
+      );
+      function bruteForce(password) {
+        // start time
+        let characters = "abcdefghijklmnopqrstuvwxyz";
+        if (document.getElementById("numbers").checked) {
+          characters += '1234567890';
         }
-
-        header {
-          position: absolute;
-          top: 0;
-          background-color: #282828;
-          width: 100%;
-          padding: 25px 0;
-          text-align: center;
-          box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
-          margin-bottom: 40px;
+        if (document.getElementById("bothCase").checked) {
+          characters += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         }
-
-        h1 {
-          margin: 0;
-          font-size: 2rem;
-          letter-spacing: 1.5px;
+        if (document.getElementById("specialChars").checks) {
+          characters += '!@#$%^&*()_+.-';
         }
-
-        .container {
-          background: rgba(0, 0, 0, 0.7);
-          padding: 30px;
-          border-radius: 12px;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-          max-width: 400px;
-          width: 90%;
-          text-align: center;
-        }
-
-        input[type="password"] {
-          width: 95%;
-          padding: 12px;
-          margin-bottom: 15px;
-          margin-right: 15px;
-          border: none;
-          border-radius: 8px;
-          font-size: 16px;
-          color: #333;
-          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        button {
-          padding: 12px 20px;
-          font-size: 16px;
-          color: #fff;
-          background: linear-gradient(135deg, #ff416c, #ff4b2b);
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: background 0.3s, transform 0.3s;
-          box-shadow: 0 4px 10px rgba(255, 75, 43, 0.3);
-          margin-top: 25px;
-        }
-
-        button:hover {
-          background: linear-gradient(135deg, #ff4b2b, #ff416c);
-          transform: translateY(-3px);
-        }
-
-        button:disabled {
-          background: #555;
-          cursor: not-allowed;
-          box-shadow: none;
-        }
-
-        #currentAttempt {
-          font-size: 28px;
-          font-weight: bold;
-          margin: 25px 0;
-          transition: color 0.5s, background-color 0.5s;
-        }
-
-        .flashing-green {
-          animation: flashgreen 1s infinite alternate;
-        }
-        @keyframes flashgreen {
-          from {
-            background-color: #00ff00;
-          }
-          to {
-            background-color: rgba(0, 0, 0, 0);
-          }
-        }
-        .flashing-red {
-          animation: flashred 1s infinite alternate;
-        }
-        @keyframes flashred {
-          from {
-            background-color: #ff0000;
-          }
-          to {
-            background-color: rgba(0, 0, 0, 0);
-          }
-        }
-
-        .slot-machine {
-          animation: slotMachine 0.05s infinite;
-        }
-
-        @keyframes slotMachine {
-          0% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(10px);
-          }
-          100% {
-            transform: translateY(0);
-          }
-        }
-
-        footer {
-          position: absolute;
-          bottom: 0;
-          color: #aaa;
-          font-size: 14px;
-        }
-      </style>
-    </head>
-
-    <body>
-      <header>
-        <h1>PassCrack</h1>
-      </header>
-
-      <div class="container">
-        <input
-          type="password"
-          id="password"
-          name="password"
-          placeholder="Enter your password"
-        />
-        <div id="crackingTimeDiv">
-          <p id="crackingTime">Estimated time to crack: N/A</p>
-          <p id="possibleCombinations">Possible combinations: N/A</p>
-        </div>
-        <div id="currentAttemptDiv">
-          <p id="currentAttempt">_ _ _ _</p>
-        </div>
-        <p id="passwordScore">Password Score: N/A</p>
-      </div>
-
-      <div class="crack-container">
-        <button id="crack" disabled>Crack</button>
-      </div>
-
-      <footer>
-        <p>UNH Cybersecurity Club 2024</p>
-      </footer>
-
-      <script>
-        const guessesPerSecond = 400000; // depends on the device
-        const characters =
-          "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+.-";
         const charSetSize = characters.length;
 
-        function calculateCrackingTime(password) {
-          const passwordLength = password.length;
-          if (passwordLength === 0) return "N/A";
+        let startTime = new Date().getTime();
+        let maxDuration = 600000; // 600 seconds
+        let found = false;
+        let attemptCount = 0;
 
-          const totalCombinations = Math.pow(charSetSize, passwordLength);
-          const timeInSeconds = totalCombinations / guessesPerSecond;
-
-          const timeInMinutes = timeInSeconds / 60;
-          const timeInHours = timeInMinutes / 60;
-          const timeInDays = timeInHours / 24;
-          const timeInYears = timeInDays / 365;
-
-          if (timeInYears > 1) return `${timeInYears.toFixed(2)} years`;
-          else if (timeInDays > 1) return `${timeInDays.toFixed(2)} days`;
-          else if (timeInHours > 1) return `${timeInHours.toFixed(2)} hours`;
-          else if (timeInMinutes > 1)
-            return `${timeInMinutes.toFixed(2)} minutes`;
-          else return `${timeInSeconds.toFixed(2)} seconds`;
+        let slowMode = document.getElementById("slowMode").checked;
+        if (!slowMode) {
+          console.log("Set text")
+          setTimeout(() => {
+            document.getElementById("currentAttempt").innerHTML = "Cracking..."
+          }, 100);
         }
 
-        function calculatePasswordScore(password) {
-          // Define character set sizes
-          const LOWERCASE_SIZE = 26;
-          const UPPERCASE_SIZE = 26;
-          const DIGIT_SIZE = 10;
-          const SPECIAL_CHAR_SIZE = 32;
-
-          // Calculate character set size based on the password
-          const calculateCharSetSize = (password) => {
-            let size = 0;
-            if (/[a-z]/.test(password)) size += LOWERCASE_SIZE;
-            if (/[A-Z]/.test(password)) size += UPPERCASE_SIZE;
-            if (/[0-9]/.test(password)) size += DIGIT_SIZE;
-            if (/[^a-zA-Z0-9]/.test(password)) size += SPECIAL_CHAR_SIZE;
-            return size;
-          };
-
-          // Check if the password is dictionary-like
-          const isDictionaryLike = (password) => {
-            const commonPatterns = ["password", "123456", "qwerty", "letmein"]; // Add more patterns as needed
-            return commonPatterns.some((pattern) =>
-              password.toLowerCase().includes(pattern)
-            );
-          };
-
-          const L = password.length;
-          const S = calculateCharSetSize(password);
-
-          if (L === 0 || S === 0) return 0;
-          let multiplier = 1;
-          if (/[^a-zA-Z0-9]/.test(password)) multiplier *= 1.5;
-          if (!isDictionaryLike(password)) multiplier *= 2;
-          const combinations = Math.pow(S, L) * multiplier;
-
-          // Reward length significantly by applying an additional factor
-          const lengthFactor = Math.pow(L, 2); // Exponential scaling for length
-          const totalScore = combinations * lengthFactor;
-
-          // Return the logarithmic score or the raw number
-          return Math.log10(totalScore);
-        }
-
-        function updateCrackingTimes() {
-          const password = document.getElementById("password").value;
-
-          if (password.length > 0) {
-            document.getElementById("crack").removeAttribute("disabled");
-          } else {
-            document
-              .getElementById("crack")
-              .setAttribute("disabled", "disabled");
+        document
+          .getElementById("currentAttempt")
+          .classList.add("slot-machine");
+        function generatePassword(currentAttempt) {
+          attemptCount++;
+          if (attemptCount % 10 == 0) {
+            document.getElementById(
+              "currentAttempt"
+            ).innerText = `${currentAttempt}`;
+            console.log("Attempt " + attemptCount + ": " + currentAttempt);
           }
 
-          const passwordTime = calculateCrackingTime(password);
-          document.getElementById(
-            "crackingTime"
-          ).innerText = `Estimated time to crack: ${passwordTime}`;
-
-          const possibleCombinations = Math.pow(charSetSize, password.length);
-          document.getElementById(
-            "possibleCombinations"
-          ).innerText = `Possible combinations: ${possibleCombinations}`;
-
-          const passwordScore = calculatePasswordScore(password);
-          // password score but only to the nearest .001
-          document.getElementById(
-            "passwordScore"
-          ).innerText = `Password Score: ${passwordScore.toFixed(3)}`;
-
-          // remove set current attempt to ____
-          document.getElementById("currentAttempt").innerText = "_ _ _ _";
-          document
-            .getElementById("currentAttempt")
-            .classList.remove("flashing-green");
-          document
-            .getElementById("currentAttempt")
-            .classList.remove("flashing-red");
-          document
-            .getElementById("currentAttempt")
-            .classList.remove("slot-machine");
-        }
-
-        document.getElementById("crack").addEventListener("click", function () {
-          document.getElementById("currentAttempt").innerText = "_ _ _ _";
-          document
-            .getElementById("currentAttempt")
-            .classList.remove("flashing-green");
-          document
-            .getElementById("currentAttempt")
-            .classList.remove("flashing-red");
-          document
-            .getElementById("currentAttempt")
-            .classList.remove("slot-machine");
-          console.log(
-            "Cracking password " + document.getElementById("password").value
-          );
-          function bruteForce(password) {
-            // start time
-            let startTime = new Date().getTime();
-            let maxDuration = 60000; // 60 seconds
-            let found = false;
-            let attemptCount = 0;
-
+          if (currentAttempt === password) {
+            found = true;
             document
               .getElementById("currentAttempt")
-              .classList.add("slot-machine");
-            function generatePassword(currentAttempt) {
-              attemptCount++;
-              if (attemptCount % 10 == 0) {
-                document.getElementById(
-                  "currentAttempt"
-                ).innerText = `${currentAttempt}`;
-                console.log("Attempt " + attemptCount + ": " + currentAttempt);
-              }
-
-              if (currentAttempt === password) {
-                found = true;
-                document
-                  .getElementById("currentAttempt")
-                  .classList.remove("slot-machine");
-                document
-                  .getElementById("currentAttempt")
-                  .classList.add("flashing-green");
-                document.getElementById(
-                  "currentAttempt"
-                ).innerText = `${currentAttempt}`;
-                return;
-              }
-
-              if (new Date().getTime() - startTime > maxDuration) {
-                document
-                  .getElementById("currentAttempt")
-                  .classList.remove("slot-machine");
-                document
-                  .getElementById("currentAttempt")
-                  .classList.add("flashing-red");
-                document.getElementById("currentAttempt").innerText =
-                  "Time limit reached";
-                return;
-              }
-
-              if (currentAttempt.length < password.length) {
-                for (let i = 0; i < charSetSize; i++) {
-                  if (found) return;
-                  // setTimeout(() => {
-                  generatePassword(currentAttempt + characters[i]);
-                  // }, 0);
-                }
-              }
-            }
-            generatePassword("");
+              .classList.remove("slot-machine");
+            document
+              .getElementById("currentAttempt")
+              .classList.add("flashing-green");
+            document.getElementById(
+              "currentAttempt"
+            ).innerText = `${currentAttempt}`;
+            return;
           }
 
-          let rockyou = `
+          if (new Date().getTime() - startTime > maxDuration) {
+            document
+              .getElementById("currentAttempt")
+              .classList.remove("slot-machine");
+            document
+              .getElementById("currentAttempt")
+              .classList.add("flashing-red");
+            document.getElementById("currentAttempt").innerText =
+              "Time limit reached";
+            return;
+          }
+
+          if (currentAttempt.length < password.length) {
+            for (let i = 0; i < charSetSize; i++) {
+              if (found) return;
+              if (slowMode) {
+                setTimeout(() => {
+                  generatePassword(currentAttempt + characters[i]);
+                }, 0);
+              } else {
+                generatePassword(currentAttempt + characters[i]);
+              }
+            }
+          }
+        }
+        generatePassword("");
+      }
+
+      let rockyou = `
           123456
 password
 12345678
@@ -1348,27 +1397,27 @@ wildcat
 polina
 freepass`;
 
-          // check if exists in rockyou
-          passwd = document.getElementById("password").value;
-          if (rockyou.includes(passwd)) {
-            found = true;
-            document
-              .getElementById("currentAttempt")
-              .classList.remove("slot-machine");
-            document
-              .getElementById("currentAttempt")
-              .classList.add("flashing-green");
-            document.getElementById("currentAttempt").innerText = `${passwd}`;
-            return;
-          } else {
-            bruteForce(document.getElementById("password").value);
-          }
-        });
-
+      // check if exists in rockyou
+      passwd = document.getElementById("password").value;
+      if (rockyou.includes(passwd)) {
+        found = true;
         document
-          .getElementById("password")
-          .addEventListener("keyup", updateCrackingTimes);
-      </script>
-    </body>
-  </html>
+          .getElementById("currentAttempt")
+          .classList.remove("slot-machine");
+        document
+          .getElementById("currentAttempt")
+          .classList.add("flashing-green");
+        document.getElementById("currentAttempt").innerText = `${passwd}`;
+        return;
+      } else {
+        bruteForce(document.getElementById("password").value);
+      }
+    });
+
+    document
+      .getElementById("password")
+      .addEventListener("keyup", updateCrackingTimes);
+  </script>
+</body>
+
 </html>
